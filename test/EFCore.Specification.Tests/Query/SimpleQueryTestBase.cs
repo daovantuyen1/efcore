@@ -635,7 +635,8 @@ namespace Microsoft.EntityFrameworkCore
                     o => o.OrderId,
                     (o, g) => new
                     {
-                        Key = o, IsPending = g.Max(y => y.ShippingDate == null && y.CancellationDate == null ? o : (o - 10000000))
+                        Key = o,
+                        IsPending = g.Max(y => y.ShippingDate == null && y.CancellationDate == null ? o : (o - 10000000))
                     })
                 .OrderBy(e => e.Key);
 
@@ -664,6 +665,67 @@ namespace Microsoft.EntityFrameworkCore
             public int OrderId { get; set; }
             public DateTime? ShippingDate { get; set; }
             public DateTime? CancellationDate { get; set; }
+        }
+
+        [ConditionalTheory]
+        [MemberData(nameof(IsAsyncData))]
+        public virtual async Task Enum_with_value_converter_matching_take_value(bool async)
+        {
+            var contextFactory = await InitializeAsync<Context26472>();
+            using var context = contextFactory.CreateContext();
+            var orderItemType = OrderItemType.MyType1;
+            var query = context.Orders.Where(x => x.Items.Any()).OrderBy(e => e.Id).Take(1)
+                .Select(e => e.Id)
+                .Join(context.Orders, o => o, i => i.Id, (o, i) => i)
+                .Select(entity => new
+                {
+                    entity.Id,
+                    SpecialSum = entity.Items.Where(x => x.Type == orderItemType)
+                        .Select(x => x.Price)
+                        .FirstOrDefault()
+                });
+
+            var result = async
+                ? await query.ToListAsync()
+                : query.ToList();
+        }
+
+        protected class Context26472 : DbContext
+        {
+            public Context26472(DbContextOptions options)
+                   : base(options)
+            {
+            }
+
+            public virtual DbSet<Order> Orders { get; set; }
+            public virtual DbSet<OrderItem26472> OrderItems { get; set; }
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                modelBuilder.Entity<OrderItem26472>().Property(x => x.Type).HasConversion<string>();
+            }
+        }
+
+        protected class Order
+        {
+            public int Id { get; set; }
+
+            public virtual ICollection<OrderItem26472> Items { get; set; }
+        }
+
+        protected class OrderItem26472
+        {
+            public int Id { get; set; }
+            public int OrderId { get; set; }
+            public OrderItemType Type { get; set; }
+            public double Price { get; set; }
+        }
+
+        protected enum OrderItemType
+        {
+            Undefined = 0,
+            MyType1 = 1,
+            MyType2 = 2
         }
     }
 }
