@@ -659,6 +659,8 @@ namespace Microsoft.EntityFrameworkCore.ModelBuilding
             public virtual ICollection<PoliceViewModel> Police { get; set; } = null!;
 
             public virtual ICollection<DoctorViewModel> Medics { get; set; } = null!;
+
+            public Dictionary<string, string>? CustomValues { get; set; } = new();
         }
 
         protected abstract class PersonBaseViewModel

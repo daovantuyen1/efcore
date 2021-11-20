@@ -1584,7 +1584,8 @@ namespace Microsoft.EntityFrameworkCore.ModelBuilding
                 modelBuilder.Entity<IntDict>();
 
                 Assert.Equal(
-                    CoreStrings.EntityRequiresKey(typeof(Dictionary<int, string>).ShortDisplayName()),
+                    CoreStrings.NavigationNotAdded(
+                        nameof(IntDict), nameof(IntDict.Notes), typeof(Dictionary<int, string>).ShortDisplayName()),
                     Assert.Throws<InvalidOperationException>(() => modelBuilder.FinalizeModel()).Message);
             }
 
